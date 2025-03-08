@@ -19,3 +19,11 @@ type Article struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+
+type Comment struct {
+	ID        int    `json:"id"`
+	Content   string `json:"content"`
+	UserID    int    `json:"user_id"`
+	ArticleID int    `json:"article_id"`
+}

@@ -24,6 +24,10 @@ func main() {
 	api.GET("/article/:id", handlers.GetArticle)
 	api.DELETE("/article/:id", handlers.DeleteArticle, middleware.JWTMiddleware)
 
+	comment :=  e.Group("/api/v1/articles")
+	api.POST("/articles/:articleID/comments", handlers.CreateComment, middleware.JWTMiddleware)
+	comment.GET("/:articleID/comments", handlers.GetCommentsByArticle, middleware.JWTMiddleware)
+	comment.GET("/:articleID/comments/:commentID", handlers.GetCommentsByArticle, middleware.JWTMiddleware)
 
 
 	e.Start(":8080")

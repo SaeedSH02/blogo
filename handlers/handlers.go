@@ -5,6 +5,7 @@ import (
 	"blogo/models"
 	"database/sql"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -80,4 +81,96 @@ func DeleteArticle(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, "Article deleted successfully")
+}
+
+
+
+
+//------------Comments
+
+
+
+func CreateComment(c echo.Context) error {
+	var comment models.Comment
+
+
+	userID := c.Get("user_id").(int)
+
+
+	articleID := c.Param("articleID")
+	articleIDInt, err := strconv.Atoi(articleID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid article ID"})
+	}
+
+
+	if err := c.Bind(&comment); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
+	}
+
+	_, err = database.DB.Exec(
+		"INSERT INTO comments (content, user_id, article_id) VALUES ($1, $2, $3)",
+		comment.Content, userID, articleIDInt)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create comment"})
+	}
+
+	return c.JSON(http.StatusCreated, echo.Map{"message": "Comment added successfully"})
+}
+
+
+
+func GetCommentsByArticle(c echo.Context) error {
+	articleID := c.Param("articleID")
+	articleIDInt, err := strconv.Atoi(articleID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid article ID"})
+	}
+
+	rows, err := database.DB.Query(
+		"SELECT id, content, user_id, article_id FROM comments WHERE article_id=$1", articleIDInt)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to fetch comments"})
+	}
+	defer rows.Close()
+
+	var comments []models.Comment
+	for rows.Next() {
+		var comment models.Comment
+		if err := rows.Scan(&comment.ID, &comment.Content, &comment.UserID, &comment.ArticleID); err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to read comments"})
+		}
+		comments = append(comments, comment)
+	}
+
+	return c.JSON(http.StatusOK, comments)
+}
+
+
+func GetCommentByID(c echo.Context) error {
+	articleID := c.Param("articleID")
+	commentID := c.Param("commentID")
+	commentIDInt, err := strconv.Atoi(commentID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid comment ID"})
+	}
+
+	articleIDInt, err := strconv.Atoi(articleID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid article ID"})
+	}
+
+	var comment models.Comment
+	// جستجو برای کامنت با هر دو articleID و commentID
+	err = database.DB.QueryRow(
+		"SELECT id, content, user_id, article_id FROM comments WHERE id=$1 AND article_id=$2",
+		commentIDInt, articleIDInt).
+		Scan(&comment.ID, &comment.Content, &comment.UserID, &comment.ArticleID)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Comment not found"})
+	}
+
+	return c.JSON(http.StatusOK, comment)
 }
