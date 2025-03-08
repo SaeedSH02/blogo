@@ -19,7 +19,7 @@ func main() {
 	api.POST("/register", handlers.Register)
 	api.POST("/login", handlers.Login)
 	//Articles
-	api.POST("/articles", handlers.CreateArticle)
+	api.POST("/articles", handlers.CreateArticle, middleware.JWTMiddleware)
 	api.GET("/articles", handlers.GetArticles)
 	api.GET("/article/:id", handlers.GetArticle)
 	api.DELETE("/article/:id", handlers.DeleteArticle, middleware.JWTMiddleware)
